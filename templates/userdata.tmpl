@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Register to Cluster
+cat <<'EOF' >> /etc/ecs/ecs.config
+ECS_CLUSTER=${CLUSTER_NAME}
+EOF
+
+# SSM Agent
+cd /tmp
+sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+sudo start amazon-ssm-agent
+
+# EFS Mount
+if [ "$FILESYSTEM_ID" != "" ]; then
+    sudo yum install -y amazon-efs-utils
+    echo "$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).${FILESYSTEM_ID}.efs.${REGION}.amazonaws.com:/    /mnt/efs   nfs4    defaults" >> /etc/fstab
+    mkdir -p /mnt/efs
+    mount -a
+fi
